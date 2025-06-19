@@ -1,22 +1,41 @@
 import os
 
 # =====================================================================
-# PARTE 1: ANALISADOR LÉXICO (Seu código original)
+# PARTE 1: ANALISADOR LÉXICO
 # =====================================================================
 afd = {
     'q0': {'s': 'q1', 'f': 'q7', 'v': 'q22', 'o': 'q42', 'c': 'q16_q25', 't': 'q33_q37', 'w': 'q11_q29'},
-    'q1': {'e': 'q2'}, 'q2': {'l': 'q3'}, 'q3': {'e': 'q4'}, 'q4': {'c': 'q5'}, 'q5': {'t': 'q6'},
-    'q7': {'r': 'q8'}, 'q8': {'o': 'q9'}, 'q9': {'m': 'q10'},
-    'q22': {'a': 'q23'}, 'q23': {'r': 'q24'},
+    'q1': {'e': 'q2'},
+    'q2': {'l': 'q3'},
+    'q3': {'e': 'q4'},
+    'q4': {'c': 'q5'},
+    'q5': {'t': 'q6'},
+    'q7': {'r': 'q8'},
+    'q8': {'o': 'q9'},
+    'q9': {'m': 'q10'},
+    'q22': {'a': 'q23'},
+    'q23': {'r': 'q24'},
     'q42': {'p': 'q43'},
-    'q16_q25': {'r': 'q17', 'a': 'q26'}, 'q17': {'e': 'q18'}, 'q18': {'a': 'q19'}, 'q19': {'t': 'q20'}, 'q20': {'e': 'q21'},
-    'q26': {'s': 'q27'}, 'q27': {'e': 'q28'},
-    'q33_q37': {'h': 'q34', 'a': 'q38'}, 'q34': {'e': 'q35'}, 'q35': {'n': 'q36'},
-    'q38': {'b': 'q39'}, 'q39': {'l': 'q40'}, 'q40': {'e': 'q41'},
-    'q11_q29': {'h': 'q12_q30'}, 'q12_q30': {'e': 'q13_q31'}, 'q13_q31': {'r': 'q14', 'n': 'q32'},
-    'q14': {'e': 'q15'}, 'q32': {}
+    'q16_q25': {'r': 'q17', 'a': 'q26'},
+    'q17': {'e': 'q18'},
+    'q18': {'a': 'q19'},
+    'q19': {'t': 'q20'},
+    'q20': {'e': 'q21'},
+    'q26': {'s': 'q27'},
+    'q27': {'e': 'q28'},
+    'q33_q37': {'h': 'q34', 'a': 'q38'},
+    'q34': {'e': 'q35'},
+    'q35': {'n': 'q36'},
+    'q38': {'b': 'q39'},
+    'q39': {'l': 'q40'},
+    'q40': {'e': 'q41'},
+    'q11_q29': {'h': 'q12_q30'},
+    'q12_q30': {'e': 'q13_q31'},
+    'q13_q31': {'r': 'q14', 'n': 'q32'},
+    'q14': {'e': 'q15'},
+    'q32': {}
 }
-afd['q13_q31']['n'] = 'q32' 
+
 estados_finais = ['q6', 'q10', 'q15', 'q21', 'q24', 'q28', 'q32', 'q36', 'q41', 'q43']
 
 def transicao(token):
@@ -131,14 +150,24 @@ def analisador_sintatico(fita_tokens, tabela_simbolos, tabela_slr, regras_gramat
 # =====================================================================
 
 regras_gramatica = [
-    ("PROGRAMA'", ["PROGRAMA"]),("PROGRAMA", ["PROGRAMA", "COMANDO"]),("PROGRAMA", ["COMANDO"]),
-    ("COMANDO", ["create", "table", "var"]),("COMANDO", ["create", "var", "from", "var"]),
+    ("PROGRAMA'", ["PROGRAMA"]),
+    ("PROGRAMA", ["PROGRAMA", "COMANDO"]),
+    ("PROGRAMA", ["COMANDO"]),
+    ("COMANDO", ["create", "table", "var"]),
+    ("COMANDO", ["create", "var", "from", "var"]),
     ("COMANDO", ["select", "PARTE_SELECT", "from", "var", "PARTE_WHERE"]),
-    ("PARTE_SELECT", ["ELEMENTO_SELECT"]),("PARTE_SELECT", ["ELEMENTO_SELECT", "PARTE_SELECT"]),
-    ("ELEMENTO_SELECT", ["var"]),("ELEMENTO_SELECT", ["EXP_CASE"]),("EXP_CASE", ["case", "LISTA_WHEN"]),
-    ("LISTA_WHEN", ["CLAUSULA_WHEN"]),("LISTA_WHEN", ["CLAUSULA_WHEN", "LISTA_WHEN"]),
-    ("CLAUSULA_WHEN", ["when", "CONDICAO", "then", "var"]),("CONDICAO", ["var", "op", "var"]),
-    ("PARTE_WHERE", ["where", "CONDICAO"]),("PARTE_WHERE", ["where", "EXP_CASE", "op", "var"]),("PARTE_WHERE", [])
+    ("PARTE_SELECT", ["ELEMENTO_SELECT"]),
+    ("PARTE_SELECT", ["ELEMENTO_SELECT", "PARTE_SELECT"]),
+    ("ELEMENTO_SELECT", ["var"]),
+    ("ELEMENTO_SELECT", ["EXP_CASE"]),
+    ("EXP_CASE", ["case", "LISTA_WHEN"]),
+    ("LISTA_WHEN", ["CLAUSULA_WHEN"]),
+    ("LISTA_WHEN", ["CLAUSULA_WHEN", "LISTA_WHEN"]),
+    ("CLAUSULA_WHEN", ["when", "CONDICAO", "then", "var"]),
+    ("CONDICAO", ["var", "op", "var"]),
+    ("PARTE_WHERE", ["where", "CONDICAO"]),
+    ("PARTE_WHERE", ["where", "EXP_CASE", "op", "var"]),
+    ("PARTE_WHERE", [])
 ]
 
 tabela_slr = {
@@ -148,15 +177,21 @@ tabela_slr = {
     3: {'table': 's6', 'var': 's7'},
     4: {'var': 's10', 'case': 's12', 'PARTE_SELECT': 8, 'ELEMENTO_SELECT': 9, 'EXP_CASE': 11},
     5: {'create': 'r1', 'select': 'r1', '$': 'r1'},
-    6: {'var': 's13'}, 7: {'from': 's14'}, 8: {'from': 's15'},
+    6: {'var': 's13'},
+    7: {'from': 's14'},
+    8: {'from': 's15'},
     9: {'var': 's10', 'case': 's12', 'from': 'r6', 'PARTE_SELECT': 16, 'ELEMENTO_SELECT': 9, 'EXP_CASE': 11},
     10: {'var': 'r8', 'case': 'r8', 'from': 'r8', 'then': 'r8'},
     11: {'var': 'r9', 'case': 'r9', 'from': 'r9', 'then': 'r9'},
     12: {'when': 's19', 'LISTA_WHEN': 17, 'CLAUSULA_WHEN': 18},
-    13: {'create': 'r3', 'select': 'r3', '$': 'r3'}, 14: {'var': 's20'}, 15: {'var': 's21'}, 16: {'from': 'r7'},
+    13: {'create': 'r3', 'select': 'r3', '$': 'r3'},
+    14: {'var': 's20'},
+    15: {'var': 's21'},
+    16: {'from': 'r7'},
     17: {'from': 'r10', 'then': 'r10'},
     18: {'when': 's19', 'from': 'r11', 'then': 'r11', 'LISTA_WHEN': 22, 'CLAUSULA_WHEN': 18},
-    19: {'var': 's24', 'CONDICAO': 23}, 20: {'create': 'r4', 'select': 'r4', '$': 'r4'},
+    19: {'var': 's24', 'CONDICAO': 23},
+    20: {'create': 'r4', 'select': 'r4', '$': 'r4'},
     21: {'where': 's26', 'create': 'r17', 'select': 'r17', '$': 'r17', 'PARTE_WHERE': 25},
     22: {'from': 'r12', 'then': 'r12'}, 23: {'then': 's27'}, 24: {'op': 's28'},
     25: {'create': 'r5', 'select': 'r5', '$': 'r5'},
@@ -169,8 +204,16 @@ tabela_slr = {
 }
 
 mapa_estado_para_tipo = {
-    'q6': 'select', 'q10': 'from', 'q15': 'where', 'q21': 'create', 'q24': 'var',
-    'q28': 'case', 'q32': 'when', 'q36': 'then', 'q41': 'table', 'q43': 'op'
+    'q6': 'select',
+    'q10': 'from',
+    'q15': 'where',
+    'q21': 'create',
+    'q24': 'var',
+    'q28': 'case',
+    'q32': 'when',
+    'q36': 'then',
+    'q41': 'table',
+    'q43': 'op'
 }
 
 if __name__ == "__main__":
