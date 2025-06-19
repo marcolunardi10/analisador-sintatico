@@ -1,0 +1,23 @@
+create table clientes
+
+select nome from clientes
+
+select produto from vendas where preco > 100
+
+select id case when status = 1 then ativo from usuarios
+
+select nome case when id = 1 then admin when id = 2 then editor from usuarios
+
+create view_usuarios from usuarios
+
+select case when logado = 1 then verdadeiro from sessoes
+
+select nome preco from produtos
+
+select id nome case when tipo = 1 then admin when tipo = 2 then usuario from contas where status > 0
+
+select case when ativo = 1 then online when ativo = 0 then offline from usuarios
+
+create table logs_auditoria
+
+select usuario ip case when sucesso = 1 then S when sucesso = 0 then F from logs_auditoria where id > 1000
