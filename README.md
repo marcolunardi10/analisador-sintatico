@@ -1,1 +1,1 @@
-# analisador-sint-tico
+# analisador-sintatico
