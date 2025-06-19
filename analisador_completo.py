@@ -71,12 +71,16 @@ def processar_entrada(caminho_arquivo):
 # =====================================================================
 
 def analisador_sintatico(fita_tokens, tabela_simbolos, tabela_slr, regras_gramatica):
-    fita_tokens.append(('$', '$', -1)) # Adiciona um ID inválido para o fim da fita
+    fita_tokens.append(('$', '$', -1))
+
     pilha = [0]
     ponteiro = 0
+    codigo_intermediario = []
+
     print("\n--- Iniciando Análise Sintática ---")
     print(f"{'Pilha':<40} | {'Fita de Entrada':<40} | {'Ação'}")
     print("-" * 100)
+
     while True:
         try:
             estado_atual = pilha[-1]
@@ -86,11 +90,10 @@ def analisador_sintatico(fita_tokens, tabela_simbolos, tabela_slr, regras_gramat
             fita_str = ' '.join(t[1] for t in fita_tokens[ponteiro:])
             print(f"{pilha_str:<40} | {fita_str:<40} | ", end="")
             acao = tabela_slr[estado_atual][tipo_token_atual]
-            
+
             if acao.startswith('s'):
                 proximo_estado = int(acao[1:])
                 print(f"Shift para o estado {proximo_estado}")
-                # MELHORIA: Empilha o token com seu ID único da tabela de símbolos
                 pilha.append(token_info)
                 pilha.append(proximo_estado)
                 ponteiro += 1
@@ -99,32 +102,64 @@ def analisador_sintatico(fita_tokens, tabela_simbolos, tabela_slr, regras_gramat
                 regra = regras_gramatica[num_regra]
                 cabeca, corpo = regra
                 print(f"Reduce usando a regra {num_regra}: {cabeca} -> {' '.join(corpo) if corpo else 'ε'}")
-                
-                # --- AÇÕES SEMÂNTICAS APRIMORADAS ---
-                # Acessa o token pelo índice na pilha para obter o ID e atualizar a tabela de símbolos diretamente.
-                if num_regra == 3: # COMANDO -> create table var
+
+                if num_regra == 3:
                     _, _, token_id = pilha[-2]
                     tabela_simbolos[token_id]['categoria'] = 'NOME_DE_TABELA_CRIADA'
-                elif num_regra == 4: # COMANDO -> create var from var
+                elif num_regra == 4:
                     _, _, token_id1 = pilha[-6]
                     _, _, token_id2 = pilha[-2]
                     tabela_simbolos[token_id1]['categoria'] = 'NOME_DE_VIEW_CRIADA'
                     tabela_simbolos[token_id2]['categoria'] = 'TABELA_ORIGEM_CREATE_FROM'
-                elif num_regra == 5: # COMANDO -> select PARTE_SELECT from var PARTE_WHERE
+                elif num_regra == 5:
                     _, _, token_id = pilha[-4]
                     tabela_simbolos[token_id]['categoria'] = 'TABELA_EM_FROM'
-                elif num_regra == 8: # ELEMENTO_SELECT -> var
+                elif num_regra == 8:
                     _, _, token_id = pilha[-2]
                     tabela_simbolos[token_id]['categoria'] = 'IDENTIFICADOR_EM_SELECT'
-                elif num_regra == 13: # CLAUSULA_WHEN -> when CONDICAO then var
+                elif num_regra == 13:
                     _, _, token_id = pilha[-2]
                     tabela_simbolos[token_id]['categoria'] = 'VALOR_RESULTADO_CASE'
-                elif num_regra == 14: # CONDICAO -> var op var
-                    _, _, token_id1 = pilha[-6]
-                    _, _, token_id2 = pilha[-2]
-                    tabela_simbolos[token_id1]['categoria'] = 'IDENTIFICADOR_EM_CONDICAO'
-                    tabela_simbolos[token_id2]['categoria'] = 'VALOR_EM_CONDICAO'
-                # ------------------------------------
+                elif num_regra == 14:
+                    var1_token_info = pilha[-6]
+                    op_token_info = pilha[-4]
+                    var2_token_info = pilha[-2]
+
+                    var1_lexema = var1_token_info[0]
+                    op_lexema = op_token_info[0]
+                    var2_lexema = var2_token_info[0]
+
+                    var1_id_ts = var1_token_info[2]
+                    var2_id_ts = var2_token_info[2]
+
+                    sym1 = tabela_simbolos[var1_id_ts]
+                    sym2 = tabela_simbolos[var2_id_ts]
+
+                    if 'tipo' not in sym1:
+                        sym1['tipo'] = 'NUMERIC_OR_STRING'
+                    if 'tipo' not in sym2:
+                        sym2['tipo'] = 'NUMERIC_OR_STRING'
+
+                    if sym1['tipo'] != sym2['tipo']:
+                        print(
+                            f"ERRO SEMÂNTICO na linha {sym1['linha']}: Tipos incompatíveis na condição '{sym1['identificador']} {op_lexema} {sym2['identificador']}'. ('{sym1['tipo']}' vs '{sym2['tipo']}')")
+                        return False, f"Erro semântico: Tipos incompatíveis na linha {sym1['linha']}"
+
+                    tabela_simbolos[var1_id_ts]['categoria'] = 'IDENTIFICADOR_EM_CONDICAO'
+                    tabela_simbolos[var2_id_ts]['categoria'] = 'VALOR_EM_CONDICAO'
+
+                    label_true = f"L{len(codigo_intermediario) + 1}_TRUE"
+                    label_false = f"L{len(codigo_intermediario) + 2}_FALSE"
+
+                    if op_lexema == '=':
+                        codigo_intermediario.append(f"IF_EQ {var1_lexema}, {var2_lexema} GOTO {label_true}")
+                    elif op_lexema == '>':
+                        codigo_intermediario.append(f"IF_GT {var1_lexema}, {var2_lexema} GOTO {label_true}")
+                    elif op_lexema == '<':
+                        codigo_intermediario.append(f"IF_LT {var1_lexema}, {var2_lexema} GOTO {label_true}")
+
+                    codigo_intermediario.append(f"GOTO {label_false}")
+                    codigo_intermediario.append(f"{label_true}:")
 
                 if corpo:
                     for _ in range(2 * len(corpo)):
@@ -135,6 +170,12 @@ def analisador_sintatico(fita_tokens, tabela_simbolos, tabela_slr, regras_gramat
 
             elif acao == 'acc':
                 print("Accept: Análise sintática concluída com sucesso.")
+                print("\n--- Código Intermediário Gerado (Exemplo para CONDICAO) ---")
+                if codigo_intermediario:
+                    for instr in codigo_intermediario:
+                        print(instr)
+                else:
+                    print("Nenhum código intermediário gerado para a regra demonstrada.")
                 return True, "Aceito"
             else:
                 raise ValueError(f"Ação inválida: {acao}")
@@ -144,6 +185,7 @@ def analisador_sintatico(fita_tokens, tabela_simbolos, tabela_slr, regras_gramat
             msg_erro = f"Erro sintático na linha {linha_erro}: token inesperado '{token_causador}'."
             print(f"\nERRO: {msg_erro}")
             return False, msg_erro
+
 
 # =====================================================================
 # PARTE 3: INTEGRAÇÃO E EXECUÇÃO

@@ -21,3 +21,7 @@ select case when ativo = 1 then online when ativo = 0 then offline from usuarios
 create table logs_auditoria
 
 select usuario ip case when sucesso = 1 then S when sucesso = 0 then F from logs_auditoria where id > 1000
+
+select id_str from another_table where id_str = 5
+
+select data from logs where timestamp > 1678886400
